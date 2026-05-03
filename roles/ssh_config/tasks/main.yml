@@ -47,7 +47,7 @@
   changed_when: false
   no_log: true
 
-- name: Drop ~/.ssh/{{ ssh_config_op_key_filename }}
+- name: Drop SSH private key into ~/.ssh
   ansible.builtin.copy:
     dest: "{{ ansible_env.HOME }}/.ssh/{{ ssh_config_op_key_filename }}"
     content: "{{ ssh_config_priv.stdout }}\n"
@@ -65,7 +65,7 @@
   changed_when: false
   no_log: true
 
-- name: Drop ~/.ssh/{{ ssh_config_op_key_filename }}.pub
+- name: Drop SSH public key into ~/.ssh
   ansible.builtin.copy:
     dest: "{{ ansible_env.HOME }}/.ssh/{{ ssh_config_op_key_filename }}.pub"
     content: "{{ ssh_config_pub.stdout }}\n"
