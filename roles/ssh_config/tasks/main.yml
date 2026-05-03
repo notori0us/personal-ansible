@@ -1,0 +1,72 @@
+---
+# Drops ~/.ssh/config and the id_ansible keypair from 1Password.
+# Requires `op` CLI on PATH and an active session on the control node.
+#
+# Expected items in your Personal vault:
+#   - "personal-ssh-config" (Secure Note) — body is the full ssh_config
+#   - "id_ansible"          (SSH Key)     — fields: "private key", "public key"
+
+- name: Ensure ~/.ssh exists
+  ansible.builtin.file:
+    path: "{{ ansible_env.HOME }}/.ssh"
+    state: directory
+    mode: '0700'
+
+# ----- ~/.ssh/config -----
+
+- name: Read ssh config from 1Password
+  ansible.builtin.command: >
+    op item get personal-ssh-config
+    --vault Personal
+    --field notesPlain
+    --reveal
+  register: ssh_config_content
+  delegate_to: localhost
+  changed_when: false
+  no_log: true
+
+- name: Drop ~/.ssh/config
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.ssh/config"
+    content: "{{ ssh_config_content.stdout }}\n"
+    mode: '0600'
+    backup: true
+  no_log: true
+
+# ----- id_ansible keypair -----
+
+- name: Read id_ansible private key from 1Password
+  ansible.builtin.command: >
+    op item get id_ansible
+    --vault Personal
+    --field "private key"
+    --reveal
+  register: id_ansible_priv
+  delegate_to: localhost
+  changed_when: false
+  no_log: true
+
+- name: Drop ~/.ssh/id_ansible
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.ssh/id_ansible"
+    content: "{{ id_ansible_priv.stdout }}\n"
+    mode: '0600'
+  no_log: true
+
+- name: Read id_ansible public key from 1Password
+  ansible.builtin.command: >
+    op item get id_ansible
+    --vault Personal
+    --field "public key"
+    --reveal
+  register: id_ansible_pub
+  delegate_to: localhost
+  changed_when: false
+  no_log: true
+
+- name: Drop ~/.ssh/id_ansible.pub
+  ansible.builtin.copy:
+    dest: "{{ ansible_env.HOME }}/.ssh/id_ansible.pub"
+    content: "{{ id_ansible_pub.stdout }}\n"
+    mode: '0644'
+  no_log: true

@@ -1,0 +1,57 @@
+---
+# Drops /etc/wireguard/wg0.conf from 1Password.
+# Optional — if no "wireguard-wg0" item exists in your Personal vault, this
+# role no-ops with a friendly message instead of failing.
+#
+# Expected item in your Personal vault:
+#   - "wireguard-wg0" (Secure Note) — body is your full wg-quick config
+#     (Interface + Peer blocks).
+
+- name: Probe 1Password for wireguard-wg0 config
+  ansible.builtin.command: >
+    op item get wireguard-wg0
+    --vault Personal
+    --field notesPlain
+    --reveal
+  register: wg0_probe
+  delegate_to: localhost
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Notify when no wireguard-wg0 in 1Password
+  ansible.builtin.debug:
+    msg: |
+      No "wireguard-wg0" item in your 1Password Personal vault — skipping wg0 install.
+
+      To add: in 1Password, create a Secure Note titled "wireguard-wg0" in the
+      Personal vault, paste your full wg-quick config (Interface + Peer blocks)
+      as the note body. Re-run this playbook to materialize it.
+  when: wg0_probe.rc != 0
+
+- name: Ensure /etc/wireguard exists
+  ansible.builtin.file:
+    path: /etc/wireguard
+    state: directory
+    mode: '0700'
+  become: true
+  when: wg0_probe.rc == 0
+
+- name: Drop /etc/wireguard/wg0.conf
+  ansible.builtin.copy:
+    dest: /etc/wireguard/wg0.conf
+    content: "{{ wg0_probe.stdout }}\n"
+    mode: '0600'
+  become: true
+  when: wg0_probe.rc == 0
+  no_log: true
+
+- name: "Hint: bring tunnel up"
+  ansible.builtin.debug:
+    msg: |
+      wg0.conf installed at /etc/wireguard/wg0.conf.
+      Bring it up:           sudo wg-quick up wg0
+      Enable on boot (Linux): sudo systemctl enable wg-quick@wg0
+      macOS: install the WireGuard app from the App Store, "Import tunnel from file"
+             pointing at /etc/wireguard/wg0.conf.
+  when: wg0_probe.rc == 0

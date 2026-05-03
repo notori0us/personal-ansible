@@ -1,0 +1,29 @@
+---
+# Install Claude Code per https://code.claude.com/docs/en/overview
+# If `claude` is already on PATH (e.g. installed via the native installer),
+# this role no-ops to avoid stomping on an existing install.
+
+- name: Check if claude is already installed
+  ansible.builtin.command: command -v claude
+  register: claude_check
+  changed_when: false
+  failed_when: false
+
+- name: Install Claude Code (macOS, brew cask)
+  community.general.homebrew_cask:
+    name: claude-code
+    state: present
+  when:
+    - ansible_facts['os_family'] == 'Darwin'
+    - claude_check.rc != 0
+
+- name: Install Claude Code via native installer (Linux)
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://claude.ai/install.sh | bash
+  args:
+    executable: /bin/bash
+  changed_when: true
+  when:
+    - ansible_facts['os_family'] != 'Darwin'
+    - claude_check.rc != 0

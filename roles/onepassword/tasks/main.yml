@@ -1,0 +1,96 @@
+---
+# Install 1Password GUI + op CLI on both platforms.
+# After this runs, the user must:
+#   1. Open the GUI and sign in
+#   2. Settings → Developer → enable "Integrate with 1Password CLI"
+#   3. Run `op signin` in their shell
+# That's a one-time per-machine human step.
+
+# ----- macOS -----
+
+- name: Check if 1Password.app already exists (macOS)
+  ansible.builtin.stat:
+    path: /Applications/1Password.app
+  register: onepassword_app_stat
+  when: ansible_facts['os_family'] == 'Darwin'
+
+- name: Install 1Password GUI (macOS, only if missing)
+  community.general.homebrew_cask:
+    name: 1password
+    state: present
+  when:
+    - ansible_facts['os_family'] == 'Darwin'
+    - not onepassword_app_stat.stat.exists
+
+- name: Install 1Password CLI (macOS)
+  community.general.homebrew_cask:
+    name: 1password-cli
+    state: present
+  when: ansible_facts['os_family'] == 'Darwin'
+
+# ----- Debian — add 1Password apt repo + signing keys, then install -----
+
+- name: Add 1Password apt signing key (Debian)
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://downloads.1password.com/linux/keys/1password.asc \
+      | gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/1password-archive-keyring.gpg
+    executable: /bin/bash
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Add 1Password apt repository (Debian)
+  ansible.builtin.copy:
+    content: |
+      deb [arch=amd64 signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/amd64 stable main
+    dest: /etc/apt/sources.list.d/1password.list
+    mode: '0644'
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Create debsig policy directory (Debian)
+  ansible.builtin.file:
+    path: /etc/debsig/policies/AC2D62742012EA22/
+    state: directory
+    mode: '0755'
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install debsig policy file (Debian)
+  ansible.builtin.get_url:
+    url: https://downloads.1password.com/linux/debian/debsig/1password.pol
+    dest: /etc/debsig/policies/AC2D62742012EA22/1password.pol
+    mode: '0644'
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Create debsig keyring directory (Debian)
+  ansible.builtin.file:
+    path: /usr/share/debsig/keyrings/AC2D62742012EA22
+    state: directory
+    mode: '0755'
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Add debsig keyring (Debian)
+  ansible.builtin.shell: |
+    set -o pipefail
+    curl -fsSL https://downloads.1password.com/linux/keys/1password.asc \
+      | gpg --dearmor --output /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+  args:
+    creates: /usr/share/debsig/keyrings/AC2D62742012EA22/debsig.gpg
+    executable: /bin/bash
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install 1Password packages (Debian)
+  ansible.builtin.apt:
+    name:
+      - 1password
+      - 1password-cli
+    state: present
+    update_cache: true
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'

@@ -1,0 +1,7 @@
+.venv/
+venv/
+.vscode/
+*.retry
+.DS_Store
+.ansible/
+collections/ansible_collections/

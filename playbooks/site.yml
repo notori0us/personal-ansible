@@ -1,0 +1,28 @@
+---
+# Phase 1 — packages, dotfiles, GUI apps. No 1Password reads here, so this
+# can run on a fresh machine without `op signin`.
+
+- name: Personal workstation setup (phase 1 — no secrets)
+  hosts: workstations
+  gather_facts: true
+
+  roles:
+    - role: packages
+    - role: onepassword
+    - role: claude_code
+    - role: dotfiles
+
+  post_tasks:
+    - name: Reminder for phase 2
+      ansible.builtin.debug:
+        msg: |
+          Phase 1 done.
+
+          Next: open the 1Password GUI, sign in, enable the SSH agent + the
+          1Password CLI integration (Settings → Developer), then in this shell:
+
+              op signin
+              ansible-playbook playbooks/secrets.yml --limit {{ inventory_hostname }}
+
+          That distributes ~/.ssh/config, ~/.ssh/id_ansible, and the WireGuard
+          tunnel config from 1Password.

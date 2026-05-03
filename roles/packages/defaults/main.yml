@@ -1,0 +1,14 @@
+---
+packages_macos:
+  - vim
+  - tmux
+  - wireguard-tools
+  - gh
+
+packages_debian:
+  - vim
+  - tmux
+  - wireguard-tools
+  - gh
+  - curl
+  - git

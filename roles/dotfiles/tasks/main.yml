@@ -1,0 +1,19 @@
+---
+# Clone notori0us/dotfiles and run setup.sh.
+# setup.sh is itself idempotent (no-op if ./already_set_up exists),
+# so re-running this role is safe.
+
+- name: Clone dotfiles repo
+  ansible.builtin.git:
+    repo: "{{ dotfiles_repo }}"
+    dest: "{{ ansible_env.HOME }}/{{ dotfiles_dir }}"
+    update: true
+    version: master
+
+- name: Run dotfiles setup.sh
+  ansible.builtin.command: ./setup.sh
+  args:
+    chdir: "{{ ansible_env.HOME }}/{{ dotfiles_dir }}"
+    creates: "{{ ansible_env.HOME }}/{{ dotfiles_dir }}/already_set_up"
+  register: dotfiles_setup
+  changed_when: dotfiles_setup.rc == 0 and 'Setup complete' in dotfiles_setup.stdout

@@ -1,0 +1,23 @@
+---
+# Cross-platform base packages. Homebrew is assumed installed on macOS;
+# bootstrap.sh refuses to proceed without it.
+
+- name: Install packages (macOS)
+  community.general.homebrew:
+    name: "{{ packages_macos }}"
+    state: present
+  when: ansible_facts['os_family'] == 'Darwin'
+
+- name: Update apt cache (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install packages (Debian)
+  ansible.builtin.apt:
+    name: "{{ packages_debian }}"
+    state: present
+  become: true
+  when: ansible_facts['os_family'] == 'Debian'
