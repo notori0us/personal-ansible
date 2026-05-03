@@ -1,10 +1,11 @@
 ---
-# Drops ~/.ssh/config and the id_ansible keypair from 1Password.
+# Drops ~/.ssh/config and the ansible SSH keypair from 1Password.
 # Requires `op` CLI on PATH and an active session on the control node.
 #
-# Expected items in your Personal vault:
-#   - "personal-ssh-config" (Secure Note) — body is the full ssh_config
-#   - "id_ansible"          (SSH Key)     — fields: "private key", "public key"
+# Item names are configurable via roles/ssh_config/defaults/main.yml.
+# Defaults expect:
+#   - "{{ ssh_config_op_config_item }}" (Secure Note) — body is full ssh_config
+#   - "{{ ssh_config_op_key_item }}"    (SSH Key)     — fields: "private key", "public key"
 
 - name: Ensure ~/.ssh exists
   ansible.builtin.file:
@@ -16,8 +17,8 @@
 
 - name: Read ssh config from 1Password
   ansible.builtin.command: >
-    op item get personal-ssh-config
-    --vault Personal
+    op item get {{ ssh_config_op_config_item }}
+    --vault {{ ssh_config_op_vault }}
     --field notesPlain
     --reveal
   register: ssh_config_content
@@ -33,40 +34,40 @@
     backup: true
   no_log: true
 
-# ----- id_ansible keypair -----
+# ----- ansible SSH keypair -----
 
-- name: Read id_ansible private key from 1Password
+- name: Read SSH private key from 1Password
   ansible.builtin.command: >
-    op item get id_ansible
-    --vault Personal
+    op item get {{ ssh_config_op_key_item }}
+    --vault {{ ssh_config_op_vault }}
     --field "private key"
     --reveal
-  register: id_ansible_priv
+  register: ssh_config_priv
   delegate_to: localhost
   changed_when: false
   no_log: true
 
-- name: Drop ~/.ssh/id_ansible
+- name: Drop ~/.ssh/{{ ssh_config_op_key_filename }}
   ansible.builtin.copy:
-    dest: "{{ ansible_env.HOME }}/.ssh/id_ansible"
-    content: "{{ id_ansible_priv.stdout }}\n"
+    dest: "{{ ansible_env.HOME }}/.ssh/{{ ssh_config_op_key_filename }}"
+    content: "{{ ssh_config_priv.stdout }}\n"
     mode: '0600'
   no_log: true
 
-- name: Read id_ansible public key from 1Password
+- name: Read SSH public key from 1Password
   ansible.builtin.command: >
-    op item get id_ansible
-    --vault Personal
+    op item get {{ ssh_config_op_key_item }}
+    --vault {{ ssh_config_op_vault }}
     --field "public key"
     --reveal
-  register: id_ansible_pub
+  register: ssh_config_pub
   delegate_to: localhost
   changed_when: false
   no_log: true
 
-- name: Drop ~/.ssh/id_ansible.pub
+- name: Drop ~/.ssh/{{ ssh_config_op_key_filename }}.pub
   ansible.builtin.copy:
-    dest: "{{ ansible_env.HOME }}/.ssh/id_ansible.pub"
-    content: "{{ id_ansible_pub.stdout }}\n"
+    dest: "{{ ansible_env.HOME }}/.ssh/{{ ssh_config_op_key_filename }}.pub"
+    content: "{{ ssh_config_pub.stdout }}\n"
     mode: '0644'
   no_log: true

@@ -1,0 +1,14 @@
+---
+# 1Password item names + vault. Override in inventory or group_vars
+# if your naming differs.
+ssh_config_op_vault: Personal
+
+# Secure Note containing the full ssh_config body
+ssh_config_op_config_item: personal-ssh-config
+
+# SSH Key item containing the ansible private/public keypair.
+# Item is named after the remote username (we ssh as `localadmin@…` to
+# managed hosts), but the local filename is id_ansible to match what
+# `~/.ssh/config` references via `IdentityFile`.
+ssh_config_op_key_item: localadmin
+ssh_config_op_key_filename: id_ansible

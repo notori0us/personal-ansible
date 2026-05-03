@@ -60,10 +60,17 @@ ansible-playbook playbooks/site.yml --limit sagitta
 
 The `secrets` playbook reads from these items in your Personal vault:
 
-| 1Password item | Field used | Becomes |
-| --- | --- | --- |
-| `id_ansible` (SSH Key) | `private key` / `public key` | `~/.ssh/id_ansible{,.pub}` |
-| `Personal SSH config` (Document) | document body | `~/.ssh/config` |
-| `wireguard wg0` (Document) | document body | `/etc/wireguard/wg0.conf` |
+| 1Password item | Type | Field used | Becomes |
+| --- | --- | --- | --- |
+| `localadmin` | SSH Key | `private key` / `public key` | `~/.ssh/id_ansible{,.pub}` |
+| `personal-ssh-config` | Secure Note | note body | `~/.ssh/config` |
+| `wireguard-wg0` | Secure Note | note body | `/etc/wireguard/wg0.conf` (optional) |
 
-If any of those are missing, the corresponding role no-ops with a warning.
+The SSH Key item is named after the remote username (`localadmin@…` on
+managed hosts) but lands at `~/.ssh/id_ansible` because that's the
+filename `~/.ssh/config` references. Override item names per-host in
+`group_vars/` or inventory if your naming differs — see
+`roles/ssh_config/defaults/main.yml`.
+
+If `wireguard-wg0` is missing, the wireguard role no-ops with a friendly
+message instead of failing.
