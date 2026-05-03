@@ -1,8 +1,7 @@
 # personal-ansible
 
-Idempotent provisioning for Chris's personal workstations
-(macOS + Debian Linux). Sister repo to `notori0us/dotfiles`,
-`notori0us/rdu-nas-ansible`, and `notori0us/sea-k8s-ansible`.
+Idempotent provisioning for personal workstations (macOS + Debian Linux).
+Companion to [`notori0us/dotfiles`](https://github.com/notori0us/dotfiles).
 
 ## What it does
 
